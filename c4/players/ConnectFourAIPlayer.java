@@ -1,12 +1,23 @@
 package c4.players;
 
-public class ConnectFourAIPlayer extends ConnectFourPlayer {
+import c4.mvc.ConnectFourModelInterface;
 
-    @Override
-    public int getMove() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getMove'");
+public class ConnectFourAIPlayer extends ConnectFourPlayer {
+	ConnectFourModelInterface model;
+
+    public ConnectFourAIPlayer(ConnectFourModelInterface model){
+        this.model = model;
     }
+
+	@Override
+	public int getMove() {
+		boolean[] moves = model.getValidMoves();
+		int m = 0;
+		while(!moves[m]){
+            m++;
+        }
+		return m;
+	}
 
     public boolean isAutomated(){
         return true;
