@@ -89,4 +89,8 @@ public class ConnectFourAIPlayer extends ConnectFourPlayer {
 		
 		return results;
     }
+
+    public int[][] result(int[][] board){
+        throw new UnsupportedOperationException("Unimplemented");
+    }
 }
