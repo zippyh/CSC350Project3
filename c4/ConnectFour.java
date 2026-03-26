@@ -25,10 +25,10 @@ public class ConnectFour {
 		//ConnectFourController c = new ConnectFourController(m, player1, player2, false);
 
 		// Sets up console view -- All output to console
-		//ConnectFourController c = new ConnectFourController(m, player1, player2, true);
+		ConnectFourController c = new ConnectFourController(m, player1, player2, true);
 		
 		// Sets up GUI view -- All output thru Swing GUI
-		ConnectFourController c = new ConnectFourController(m, player1, player2);
+		//ConnectFourController c = new ConnectFourController(m, player1, player2);
 		
 		// Start the game
 		c.start();

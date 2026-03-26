@@ -6,20 +6,87 @@ import c4.mvc.ConnectFourModelInterface;
 
 public class ConnectFourAIPlayer extends ConnectFourPlayer {
 	ConnectFourModelInterface model;
+    private int maxDepth = 10;
+    private int playerNumber;
 
     public ConnectFourAIPlayer(ConnectFourModelInterface model){
         this.model = model;
+        this.playerNumber = 0;
     }
 
-	@Override
-	public int getMove() {
-		boolean[] moves = model.getValidMoves();
-		int m = 0;
-		while(!moves[m]){
-            m++;
+    @Override
+    public int getMove() {
+        // Capture our player number (1 or 2) from the model at the start of the turn
+        this.playerNumber = model.getTurn();
+        
+        // Return the action found by the Alpha-Beta Search algorithm
+        return alphaBetaSearch(model.getGrid());
+    }
+
+    public int alphaBetaSearch(int[][] state) {
+        int bestMove = -1;
+        int v = Integer.MIN_VALUE;
+        int alpha = Integer.MIN_VALUE;
+        int beta = Integer.MAX_VALUE;
+
+        // The search root: iterate through all valid columns
+        for (int a : actions(state)) {
+            // Start the recursive tree search with minValue (opponent's turn)
+            int val = minValue(result(state, a), alpha, beta, 1);
+            
+            // If this path yields a better value, update the best move
+            if (val > v) {
+                v = val;
+                bestMove = a;
+            }
+            // Update alpha for pruning in the root
+            alpha = Math.max(alpha, v);
         }
-		return m;
-	}
+        
+        return bestMove;
+    }
+
+    public int utility(int[][] board) {
+        int winner = getWinner(board);
+        
+        if (winner == this.playerNumber) {
+            return 1000; // Win for us
+        } else if (winner != -1 && winner != 0) {
+            return -1000; // Win for opponent (Loss for us)
+        } else {
+            return 0; // Draw or non-terminal
+        }
+    }
+
+    public int maxValue(int[][] state, int alpha, int beta, int depth) {
+        // Terminal test or depth cutoff check 
+        if (terminalTest(state) || depth >= maxDepth) {
+            return utility(state);
+        }
+        
+        int v = Integer.MIN_VALUE;
+        for (int a : actions(state)) {
+            v = Math.max(v, minValue(result(state, a), alpha, beta, depth + 1));
+            if (v >= beta) return v; // Beta pruning 
+            alpha = Math.max(alpha, v);
+        }
+        return v;
+    }
+
+    public int minValue(int[][] state, int alpha, int beta, int depth) {
+        // Terminal test or depth cutoff check 
+        if (terminalTest(state) || depth >= maxDepth) {
+            return utility(state);
+        }
+        
+        int v = Integer.MAX_VALUE;
+        for (int a : actions(state)) {
+            v = Math.min(v, maxValue(result(state, a), alpha, beta, depth + 1));
+            if (v <= alpha) return v; // Alpha pruning 
+            beta = Math.min(beta, v);
+        }
+        return v;
+    }
 
     public boolean isAutomated(){
         return true;
@@ -72,6 +139,54 @@ public class ConnectFourAIPlayer extends ConnectFourPlayer {
 		}
 
         return true; // if there are no wins, and there is a draw, return true
+    }
+
+    public int getWinner(int[][] board) {
+        // Check Horizontal
+        for (int row = 0; row < 6; row++) {
+            for (int col = 0; col <= 3; col++) {
+                if (board[col][row] != -1 && 
+                    board[col][row] == board[col+1][row] && 
+                    board[col][row] == board[col+2][row] && 
+                    board[col][row] == board[col+3][row]) {
+                    return board[col][row];
+                }
+            }
+        }
+        // Check Vertical
+        for (int col = 0; col < 7; col++) {
+            for (int row = 0; row <= 2; row++) {
+                if (board[col][row] != -1 && 
+                    board[col][row] == board[col][row+1] && 
+                    board[col][row] == board[col][row+2] && 
+                    board[col][row] == board[col][row+3]) {
+                    return board[col][row];
+                }
+            }
+        }
+        // Check Diagonal (Positive Slope)
+        for (int col = 0; col <= 3; col++) {
+            for (int row = 3; row < 6; row++) {
+                if (board[col][row] != -1 && 
+                    board[col][row] == board[col+1][row-1] && 
+                    board[col][row] == board[col+2][row-2] && 
+                    board[col][row] == board[col+3][row-3]) {
+                    return board[col][row];
+                }
+            }
+        }
+        // Check Diagonal (Negative Slope)
+        for (int col = 0; col <= 3; col++) {
+            for (int row = 0; row <= 2; row++) {
+                if (board[col][row] != -1 && 
+                    board[col][row] == board[col+1][row+1] && 
+                    board[col][row] == board[col+2][row+2] && 
+                    board[col][row] == board[col+3][row+3]) {
+                    return board[col][row];
+                }
+            }
+        }
+        return -1; // No winner found
     }
     
     public int[] actions(int[][] board){

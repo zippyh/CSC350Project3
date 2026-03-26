@@ -7,10 +7,13 @@ import tictactoe.mvc.TicTacToeModel;
 public class TicTacToeAIPlayer extends TicTacToePlayer {
 	TicTacToeModel model;
 	char symbol;
+	int playerNumber;
+	int maxDepth = 9;
 	
 	public TicTacToeAIPlayer(TicTacToeModel model, char symbol){
 		this.model = model;
 		this.symbol = symbol;
+		this.playerNumber = 0;
 	}
 	
 	// Assume actions are numbered 1-9
@@ -112,23 +115,66 @@ public class TicTacToeAIPlayer extends TicTacToePlayer {
 			return 'O';
 	}
 	
-	public int getMove(){
-		/* REPLACE WITH YOUR CODE */
-		return -1;
-	}
+
+	@Override
+    public int getMove() {
+        // Capture our player number (1 or 2) from the model at the start of the turn
+        this.playerNumber = model.getTurn();
+        
+        // Return the action found by the Alpha-Beta Search algorithm
+        return alphaBetaSearch(model.getGrid());
+    }
+
+    public int alphaBetaSearch(char[][] state) {
+        int bestMove = -1;
+        int v = Integer.MIN_VALUE;
+        int alpha = Integer.MIN_VALUE;
+        int beta = Integer.MAX_VALUE;
+
+        // The search root: iterate through all valid columns
+        for (int a : actions(state)) {
+            // Start the recursive tree search with minValue (opponent's turn)
+            int val = minValue(result(state, a), alpha, beta, 1);
+            
+            // If this path yields a better value, update the best move
+            if (val > v) {
+                v = val;
+                bestMove = a;
+            }
+            // Update alpha for pruning in the root
+            alpha = Math.max(alpha, v);
+        }
+        
+        return bestMove;
+    }
 	
-	public int alphaBetaSearch(char[][] state){
-		/* REPLACE WITH YOUR CODE */
-		return -1;
-	}
-	
-	public int maxValue(char[][] state, int alpha, int beta){
-		/* REPLACE WITH YOUR CODE */
-		return -1;
-	}
-	
-	public int minValue(char[][] state, int alpha, int beta){
-		/* REPLACE WITH YOUR CODE */
-		return -1;
-	}
+    public int maxValue(char[][] state, int alpha, int beta, int depth) {
+        // Terminal test or depth cutoff check 
+        if (terminalTest(state) || depth >= maxDepth) {
+            return utility(state);
+        }
+        
+        int v = Integer.MIN_VALUE;
+        for (int a : actions(state)) {
+            v = Math.max(v, minValue(result(state, a), alpha, beta, depth + 1));
+            if (v >= beta) return v; // Beta pruning 
+            alpha = Math.max(alpha, v);
+        }
+        return v;
+    }
+
+    public int minValue(char[][] state, int alpha, int beta, int depth) {
+        // Terminal test or depth cutoff check 
+        if (terminalTest(state) || depth >= maxDepth) {
+            return utility(state);
+        }
+        
+        int v = Integer.MAX_VALUE;
+        for (int a : actions(state)) {
+            v = Math.min(v, maxValue(result(state, a), alpha, beta, depth + 1));
+            if (v <= alpha) return v; // Alpha pruning 
+            beta = Math.min(beta, v);
+        }
+        return v;
+    }
 }
