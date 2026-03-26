@@ -67,7 +67,7 @@ public class ConnectFourAIPlayer extends ConnectFourPlayer {
         for(int i=0; i<7; i++){
 			for(int j=0; j<6; j++){
 				if(board[i][j] == -1)
-					return false; // if at any point we see an open space, return falsw
+					return false; // if at any point we see an open space, return false
 			}
 		}
 
@@ -78,7 +78,7 @@ public class ConnectFourAIPlayer extends ConnectFourPlayer {
         ArrayList<Integer> moves = new ArrayList<Integer>();
 		for(int col=0; col<7; col++){
 			if(board[col][0] == -1){
-                moves.add(col + 1);
+                moves.add(col);
             }
         }
 
@@ -90,7 +90,15 @@ public class ConnectFourAIPlayer extends ConnectFourPlayer {
 		return results;
     }
 
-    public int[][] result(int[][] board){
+    public int[][] result(int[][] board, int action){
+        int[][] newstate = new int[7][6];
+        for(int col = 0; col < 7; col++){
+            for(int row = 0; row < 6; row++){
+                newstate[col][row] = board[col][row];
+            }
+        }
+
+
         throw new UnsupportedOperationException("Unimplemented");
     }
 }
