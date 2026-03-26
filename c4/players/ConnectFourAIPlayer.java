@@ -91,6 +91,7 @@ public class ConnectFourAIPlayer extends ConnectFourPlayer {
     }
 
     public int[][] result(int[][] board, int action){
+        // deep copy the board
         int[][] newstate = new int[7][6];
         for(int col = 0; col < 7; col++){
             for(int row = 0; row < 6; row++){
@@ -98,7 +99,35 @@ public class ConnectFourAIPlayer extends ConnectFourPlayer {
             }
         }
 
+        // check how many pieces each player has played
+        int player1Count = 0;
+        int player2Count = 0;
+        for (int col = 0; col < 7; col++) {
+            for (int row = 0; row < 6; row++) {
+                if (board[col][row] == 1) player1Count++;
+                else if (board[col][row] == 2) player2Count++;
+            }
+        }
 
-        throw new UnsupportedOperationException("Unimplemented");
+        // check whose turn it is based on how many pieces
+        int turn;
+        if(player1Count <= player2Count){
+            turn = 1;
+        }else{
+            turn = 2;
+        }
+
+        // find the lowest empty row
+        int targetRow = 5; // bottom row
+        while (targetRow >= 0 && newstate[action][targetRow] != -1) {
+            targetRow--;
+        }
+
+        // places the piece
+        if (targetRow >= 0) {
+            newstate[action][targetRow] = turn;
+        }
+
+        return newstate;
     }
 }
