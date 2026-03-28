@@ -1,3 +1,9 @@
+/*
+ConnectFourAIPlayer.java
+A class that simulates an AI agent who can play connect four. 
+Code by Max Cheezic, Nicholas Demetrio, Hayden Ward
+*/
+
 package c4.players;
 
 import c4.mvc.ConnectFourModelInterface;
@@ -42,16 +48,12 @@ public class ConnectFourAIPlayer extends ConnectFourPlayer {
         for (int a : actions(state)) {
             // Simulate the move
             int[][] nextState = result(state, a, turn);
-            
-
             // If this move wins the game right now, take it
             if (getWinner(nextState) == turn) {
                 return a; 
             }
-
             // Otherwise, continue the search
             int val = minValue(nextState, alpha, beta, 1, opponent);
-            
             if (val > v) {
                 v = val;
                 bestMove = a;
@@ -62,18 +64,26 @@ public class ConnectFourAIPlayer extends ConnectFourPlayer {
         return bestMove;
     }
 
-    public int utility(int[][] board) {
+    public int utility(int[][] board, int depth) {
         int winner = getWinner(board);
         
-        // Highest priority is a win, a loss is the worst possible outcome, a draw is not good but not the worst
-        if (winner == this.playerNumber) return 1000000;
-        if (winner != -1) return -1000000;
+        // Subtract depth to reward finishing the game quickly
+        if (winner == this.playerNumber) return 1000000 - depth;
+        
+        // Add depth to reward dragging the game out (staying alive) as long as possible
+        if (winner != -1) return -1000000 + depth;
+        
         if (isDraw(board)) return 0;
 
         int score = 0;
-        int opponent = (this.playerNumber == 1) ? 2 : 1;
+        int opponent;
+        if (this.playerNumber == 1) {
+            opponent = 2;
+        } else {
+            opponent = 1;
+        }
 
-        // Center columns have more potential so we make these more desirable. Columns further from the center are worse.
+        // Center columns have more potential so we make these more desirable 
         for (int r = 0; r < 6; r++) {
             for (int c = 0; c < 7; c++) {
                 if (board[c][r] == this.playerNumber) {
@@ -87,42 +97,63 @@ public class ConnectFourAIPlayer extends ConnectFourPlayer {
             }
         }
 
-        // "Window"-based scanning 
-        // A window is essentially any four slots in a straight line (horizontal, vertial, diagonal)
+        // Then check through the board 
         score += scanAllWindows(board, this.playerNumber, opponent);
 
         return score;
     }
 
-    private int evaluateWindow(int[] window, int me, int opp) {
+    // A "window" is any straight line of four slots in a row 
+    private int evaluateWindow(int[] window, int[] windowRows, int[] windowCols, int[][] state, int me, int opp) {
         int score = 0;
         int countMe = 0, countOpp = 0, countEmpty = 0;
+        int emptyCol = -1;
+        int emptyRow = -1;
 
-        for (int cell : window) {
-            if (cell == me) countMe++;
-            else if (cell == opp) countOpp++;
-            else countEmpty++;
+        // Counts each player's pieces 
+        for (int i = 0; i < 4; i++) {
+            if (window[i] == me) countMe++;
+            else if (window[i] == opp) countOpp++;
+            else {
+                countEmpty++;
+                emptyCol = windowCols[i];
+                emptyRow = windowRows[i];
+            }
         }
 
-        // Win 
-        if (countMe == 4) return 1000000000; // Big number = best possible move
+        // Immediate win so return a gigantic number and be done with it 
+        if (countMe == 4) return 1000000; 
 
-        // Block opponent's immediate win
-        if (countOpp == 3 && countEmpty == 1) score -= 500000;
+        // Blocking or making 3-in-a-row
+        if (countOpp == 3 && countEmpty == 1) {
+            // Check if the opponent can actually play here next turn
+            if (isReachable(state, emptyCol, emptyRow)) {
+                return -500000; // The opponent can make a four in a row
+            } else {
+                return -100; // Not actually a big threat yet (we'd need to stack a bunch of pieces to actually play that, for instance), so ignore it. Still sucks for us but not as bad as an immediate threat
+            }
+        }
         
-        // Make a three-in-a-row
-        else if (countMe == 3 && countEmpty == 1) score += 500;
+        if (countMe == 3 && countEmpty == 1) {
+            if (isReachable(state, emptyCol, emptyRow)) {
+                score += 5000; // Aggressive move
+            } else {
+                score += 100; // Rewards a future 3-in-a-row less than one we could make now
+            }
+        }
 
-        // Block opponent's three-in-a-row
-        else if (countOpp == 2 && countEmpty == 2) score -= 100;
-
-        // Get a two-in-a-row
-        else if (countMe == 2 && countEmpty == 2) score += 50;
-
-        // Block a two in a row 
-        else if (countOpp == 1 && countEmpty == 3) score -= 10;
+        // Lower priorities (block/make 2 in a row). Makes it play defensively but not overly so 
+        else if (countOpp == 2 && countEmpty == 2) score -= 50;
+        else if (countMe == 2 && countEmpty == 2) score += 20;
 
         return score;
+    }
+
+    // Helper to see if a slot is on the bottom or resting on a piece
+    // This helps to ensure the AI isn't overly scared by a 3 in a row that can't turn into a win due to a slot not yet being fillable
+    private boolean isReachable(int[][] state, int col, int row) {
+        if (row == 5) return true; // Bottom row is always reachable
+        return state[col][row + 1] != -1; // Reachable if there's a piece below it
     }
 
     private int scanAllWindows(int[][] state, int me, int opp) {
@@ -132,7 +163,9 @@ public class ConnectFourAIPlayer extends ConnectFourPlayer {
         for (int r = 0; r < 6; r++) {
             for (int c = 0; c <= 3; c++) {
                 int[] window = {state[c][r], state[c+1][r], state[c+2][r], state[c+3][r]};
-                totalScore += evaluateWindow(window, me, opp);
+                int[] rows = {r, r, r, r};
+                int[] cols = {c, c+1, c+2, c+3};
+                totalScore += evaluateWindow(window, rows, cols, state, me, opp);
             }
         }
 
@@ -140,7 +173,9 @@ public class ConnectFourAIPlayer extends ConnectFourPlayer {
         for (int c = 0; c < 7; c++) {
             for (int r = 0; r <= 2; r++) {
                 int[] window = {state[c][r], state[c][r+1], state[c][r+2], state[c][r+3]};
-                totalScore += evaluateWindow(window, me, opp);
+                int[] rows = {r, r+1, r+2, r+3};
+                int[] cols = {c, c, c, c};
+                totalScore += evaluateWindow(window, rows, cols, state, me, opp);
             }
         }
 
@@ -148,7 +183,9 @@ public class ConnectFourAIPlayer extends ConnectFourPlayer {
         for (int c = 0; c <= 3; c++) {
             for (int r = 3; r < 6; r++) {
                 int[] window = {state[c][r], state[c+1][r-1], state[c+2][r-2], state[c+3][r-3]};
-                totalScore += evaluateWindow(window, me, opp);
+                int[] rows = {r, r-1, r-2, r-3};
+                int[] cols = {c, c+1, c+2, c+3};
+                totalScore += evaluateWindow(window, rows, cols, state, me, opp);
             }
         }
 
@@ -156,7 +193,9 @@ public class ConnectFourAIPlayer extends ConnectFourPlayer {
         for (int c = 0; c <= 3; c++) {
             for (int r = 0; r <= 2; r++) {
                 int[] window = {state[c][r], state[c+1][r+1], state[c+2][r+2], state[c+3][r+3]};
-                totalScore += evaluateWindow(window, me, opp);
+                int[] rows = {r, r+1, r+2, r+3};
+                int[] cols = {c, c+1, c+2, c+3};
+                totalScore += evaluateWindow(window, rows, cols, state, me, opp);
             }
         }
 
@@ -164,36 +203,44 @@ public class ConnectFourAIPlayer extends ConnectFourPlayer {
     }
 
     public int maxValue(int[][] state, int alpha, int beta, int depth, int turn) {
-        // Terminal test or depth cutoff check 
         if (terminalTest(state) || depth >= maxDepth) {
-            return utility(state);
+            // Pass depth here so the utility can reward faster wins
+            return utility(state, depth); 
         }
         
         int v = Integer.MIN_VALUE;
-        int nextTurn = (turn == 1) ? 2 : 1;
+        int nextTurn;
+        if (turn == 1) {
+            nextTurn = 2;
+        } else {
+            nextTurn = 1;
+        }
         
         for (int a : actions(state)) {
-            // Pass the explicit turn to result and the next turn to the recursive call
             v = Math.max(v, minValue(result(state, a, turn), alpha, beta, depth + 1, nextTurn));
-            if (v >= beta) return v; // Beta pruning 
+            if (v >= beta) return v; 
             alpha = Math.max(alpha, v);
         }
         return v;
     }
 
     public int minValue(int[][] state, int alpha, int beta, int depth, int turn) {
-        // Terminal test or depth cutoff check 
         if (terminalTest(state) || depth >= maxDepth) {
-            return utility(state);
+            // Pass depth here so the utility can penalize faster losses
+            return utility(state, depth); 
         }
         
         int v = Integer.MAX_VALUE;
-        int nextTurn = (turn == 1) ? 2 : 1;
+        int nextTurn;
+        if (turn == 1) {
+            nextTurn = 2;
+        } else {
+            nextTurn = 1;
+        }
         
         for (int a : actions(state)) {
-            // Pass the explicit turn to result and the next turn to the recursive call
             v = Math.min(v, maxValue(result(state, a, turn), alpha, beta, depth + 1, nextTurn));
-            if (v <= alpha) return v; // Alpha pruning 
+            if (v <= alpha) return v; 
             beta = Math.min(beta, v);
         }
         return v;
@@ -283,18 +330,20 @@ public class ConnectFourAIPlayer extends ConnectFourPlayer {
     
     public int[] actions(int[][] board){
         ArrayList<Integer> moves = new ArrayList<>();
-		for(int col=0; col<7; col++){
-			if(board[col][0] == -1){
+        // The statistically best columns to check first for pruning
+        int[] searchOrder = {3, 2, 4, 1, 5, 0, 6};
+        
+        for (int col : searchOrder) {
+            if (board[col][0] == -1) { // Check if column is not full
                 moves.add(col);
             }
         }
 
-		int[] results = new int[moves.size()];
-		for(int i=0; i<results.length; i++){
+        int[] results = new int[moves.size()];
+        for (int i = 0; i < results.length; i++) {
             results[i] = moves.get(i);
         }
-		
-		return results;
+        return results;
     }
 
     public int[][] result(int[][] board, int action, int turn){

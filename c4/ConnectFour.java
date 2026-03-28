@@ -7,8 +7,8 @@ public class ConnectFour {
 
 	public static void main(String[] args) {
 		// Choose one
-		playSingleGame();
-		//playBatchGames(500);
+		//playSingleGame();
+		playBatchGames(30);
 				
 	}
 	
@@ -17,7 +17,7 @@ public class ConnectFour {
 		
 		// Change the constructor calls to change the players used
 		ConnectFourPlayer player1 = new ConnectFourHumanPlayer(m);
-		ConnectFourPlayer player2 = new ConnectFourAIPlayer(m, 10);
+		ConnectFourPlayer player2 = new ConnectFourAIPlayer(m, 8);
 		
 		// Choose 1 of the Controller/View set-ups below.
 		
@@ -43,11 +43,11 @@ public class ConnectFour {
 				ConnectFourModel m = new ConnectFourModel();
 			
 				// Change the constructor calls to change the players used. Do not use HumanPlayer with this set-up.
-				ConnectFourPlayer player1 = new ConnectFourAIPlayer(m, 12);
-				ConnectFourPlayer player2 = new ConnectFourAIPlayer(m, 12);
+				ConnectFourPlayer player1 = new ConnectFourAIPlayer(m, 8);
+				ConnectFourPlayer player2 = new ConnectFourAIPlayer(m, 5);
 				
 				ConnectFourController c = new ConnectFourController(m, player1, player2, false);
-				//System.out.println("Starting game "+i); //Useful for debugging.
+				System.out.println("Starting game "+i); //Useful for debugging.
 				int winner = c.start();
 				results[winner] += 1;
 			}
