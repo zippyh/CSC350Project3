@@ -17,7 +17,7 @@ public class ConnectFour {
 		
 		// Change the constructor calls to change the players used
 		ConnectFourPlayer player1 = new ConnectFourHumanPlayer(m);
-		ConnectFourPlayer player2 = new ConnectFourAIPlayer(m);
+		ConnectFourPlayer player2 = new ConnectFourAIPlayer(m, 10);
 		
 		// Choose 1 of the Controller/View set-ups below.
 		
@@ -43,8 +43,8 @@ public class ConnectFour {
 				ConnectFourModel m = new ConnectFourModel();
 			
 				// Change the constructor calls to change the players used. Do not use HumanPlayer with this set-up.
-				ConnectFourPlayer player1 = new ConnectFourRandomPlayer(m);
-				ConnectFourPlayer player2 = new ConnectFourRandomPlayer(m);
+				ConnectFourPlayer player1 = new ConnectFourAIPlayer(m, 12);
+				ConnectFourPlayer player2 = new ConnectFourAIPlayer(m, 12);
 				
 				ConnectFourController c = new ConnectFourController(m, player1, player2, false);
 				//System.out.println("Starting game "+i); //Useful for debugging.
